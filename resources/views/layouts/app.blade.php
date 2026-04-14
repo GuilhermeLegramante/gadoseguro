@@ -11,7 +11,8 @@
         rel="stylesheet">
 
     <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
-    
+
+
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -51,7 +52,12 @@
             color: #9ca3af !important;
         }
     </style>
+
+    @stack('styles')
+
     <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+
+
 </head>
 
 <body class="bg-gray-50 pb-24 md:pb-0 md:pl-64">

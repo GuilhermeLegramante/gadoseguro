@@ -86,8 +86,14 @@
                 const canvas = document.getElementById('canvas-verify');
                 if (!canvas) return;
 
+                // const signaturePad = new SignaturePad(canvas, {
+                //     displayOnly: true
+                // });
+
                 const signaturePad = new SignaturePad(canvas, {
-                    displayOnly: true
+                    minWidth: 0.5,
+                    maxWidth: 2.5,
+                    penColor: "#000"
                 });
 
                 function renderizarAjustado() {

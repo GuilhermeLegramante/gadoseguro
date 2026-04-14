@@ -139,7 +139,12 @@
             const rawData = canvas.getAttribute('data-vector');
 
             if (rawData && rawData.length > 5) {
-                const signaturePad = new SignaturePad(canvas);
+                const signaturePad = new SignaturePad(canvas, {
+                    minWidth: 0.5,
+                    maxWidth: 2.5,
+                    penColor: "#000"
+                });
+                
                 const data = JSON.parse(rawData);
 
                 function renderizarCentralizado() {

@@ -213,23 +213,13 @@
                         const data = JSON.parse(rawData);
                         const ctx = canvas.getContext('2d');
 
-                        // Ajuste de DPI para não ficar embaçado no mobile/retina
                         const ratio = Math.max(window.devicePixelRatio || 1, 1);
                         canvas.width = canvas.offsetWidth * ratio;
                         canvas.height = canvas.offsetHeight * ratio;
                         ctx.scale(ratio, ratio);
 
-                        // Inicializa o pad em modo apenas leitura (off)
-                        const pad = new SignaturePad(canvas, {
-                            minWidth: 1,
-                            maxWidth: 2.5,
-                            penColor: "#064e3b" // Cor verde escura do seu tema
-                        });
-
-                        // Lógica de Redimensionamento Automático (Fit)
                         const points = data.flatMap(group => group.points);
                         if (points.length > 0) {
-                            // Encontra os limites do desenho
                             const minX = Math.min(...points.map(p => p.x));
                             const maxX = Math.max(...points.map(p => p.x));
                             const minY = Math.min(...points.map(p => p.y));
@@ -238,34 +228,39 @@
                             const drawingWidth = (maxX - minX) || 1;
                             const drawingHeight = (maxY - minY) || 1;
 
-                            // Calcula escala para caber no mini-card com um respiro (padding de 15px)
-                            const padding = 15;
+                            const padding = 10; // Reduzi o padding para a marca ocupar mais espaço
                             const scale = Math.min(
                                 (canvas.offsetWidth - padding) / drawingWidth,
                                 (canvas.offsetHeight - padding) / drawingHeight,
                                 1
                             );
 
-                            // Centraliza o desenho no canvas
                             const offsetX = (canvas.offsetWidth - (drawingWidth * scale)) / 2 - (minX *
                                 scale);
                             const offsetY = (canvas.offsetHeight - (drawingHeight * scale)) / 2 - (minY *
                                 scale);
 
-                            // Aplica a transformação nos pontos e carrega
+                            // Criamos o pad ANTES de tratar os dados
+                            const pad = new SignaturePad(canvas);
+
+                            // COMPENSAÇÃO DE ESPESSURA
+                            const espessuraFixa = 1.8 / scale;
+                            pad.minWidth = espessuraFixa;
+                            pad.maxWidth = espessuraFixa;
+                            pad.penColor = "#000000";
+
                             const transformedData = data.map(group => ({
                                 ...group,
                                 points: group.points.map(p => ({
                                     x: (p.x * scale) + offsetX,
-                                    y: (p.y * scale) + offsetY
+                                    y: (p.y * scale) + offsetY,
+                                    pressure: 0.5 // Ignora variação de pressão do toque original
                                 }))
                             }));
 
                             pad.fromData(transformedData);
+                            pad.off();
                         }
-
-                        // Desativa a edição (estamos apenas visualizando)
-                        pad.off();
 
                     } catch (e) {
                         console.error("Erro ao renderizar marca:", e);

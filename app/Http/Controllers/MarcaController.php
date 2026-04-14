@@ -78,7 +78,6 @@ class MarcaController extends Controller
         return view('marcas.form', compact('municipios', 'municipioGestor'));
     }
 
-    // --- NOVO MÉTODO EDIT ---
     public function edit($id)
     {
         $marca = Marca::findOrFail($id);
@@ -100,15 +99,39 @@ class MarcaController extends Controller
 
         $desenho = json_decode($request->desenho_vetor, true);
         $dadosBiometricos = $this->processarDesenho($desenho);
-        $path = $request->hasFile('foto') ? $request->file('foto')->store('marcas', 'public') : null;
 
+        // --- LÓGICA DE SALVAMENTO DA FOTO ---
+        $path = null;
+
+        if ($request->filled('foto_final')) {
+            // 1. Prioridade para a foto editada na suíte (Base64)
+            $base64Image = $request->foto_final;
+
+            // Extrai a extensão e os dados
+            // Formato esperado: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+            if (preg_match('/^data:image\/(\w+);base64,/', $base64Image, $type)) {
+                $image = substr($base64Image, strpos($base64Image, ',') + 1);
+                $type = strtolower($type[1]); // png, jpg, etc
+
+                $image = str_replace(' ', '+', $image);
+                $imageName = 'marca_' . time() . '_' . uniqid() . '.' . $type;
+                $path = 'marcas/' . $imageName;
+
+                Storage::disk('public')->put($path, base64_decode($image));
+            }
+        } elseif ($request->hasFile('foto')) {
+            // 2. Fallback para upload direto caso a edição não tenha sido usada
+            $path = $request->file('foto')->store('marcas', 'public');
+        }
+
+        // --- CRIAÇÃO DO REGISTRO ---
         $marca = Marca::create(array_merge([
-            'produtor_id' => $request->produtor_id,
-            'municipio_id' => $request->municipio_id,
-            'numero' => $request->numero,
-            'ano' => $request->ano,
+            'produtor_id'   => $request->produtor_id,
+            'municipio_id'  => $request->municipio_id,
+            'numero'        => $request->numero,
+            'ano'           => $request->ano,
             'desenho_vetor' => $desenho,
-            'foto_path' => $path,
+            'foto_path'     => $path, // Caminho salvo no storage
         ], $dadosBiometricos));
 
         // Se houver sócios selecionados, vincula na tabela pivot
@@ -119,7 +142,6 @@ class MarcaController extends Controller
         return redirect()->route('marcas.index')->with('success', 'Marca registrada com sucesso!');
     }
 
-    // --- NOVO MÉTODO UPDATE ---
     public function update(Request $request, $id)
     {
         $marca = Marca::findOrFail($id);
@@ -147,7 +169,6 @@ class MarcaController extends Controller
         return redirect()->route('marcas.index')->with('success', 'Marca atualizada com sucesso!');
     }
 
-    // Auxiliar para não repetir validação
     private function validarMarca(Request $request, $id = null)
     {
         return $request->validate([
